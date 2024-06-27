@@ -229,6 +229,7 @@ preferences.setInform("preserve-state", ".unloadable");
       setupPanes();
       setupResize();
       setupUnload();
+      setMypageButton();
       $("#search").search();
 
       options = options||{};
@@ -271,6 +272,7 @@ preferences.setInform("preserve-state", ".unloadable");
 		.chatbell({
 		  empty_title: "Click to open chat"
 		});
+
 	$("#chat-menu").on("click", "a", function(ev) {
 	  var a = $(ev.target).closest("a");
 	  switch ( a.data('action') ) {

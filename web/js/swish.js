@@ -1,5 +1,3 @@
-swish.js
-
 /*  Part of SWISH
 
     Author:        Jan Wielemaker
@@ -44,6 +42,12 @@ swish.js
  * @author Jan Wielemaker, J.Wielemaker@vu.nl
  * @requires jquery
  */
+
+window.globalSettings = { // 전역 변수 설정
+  user: null,
+  logged_in: false
+};
+
 
 require.config({
   urlArgs: "ts="+new Date().getTime(),  /* prevent caching during development */
@@ -105,8 +109,8 @@ require.config({
  * API, while the second fetches the pengines and starts the
  * application.
  */
-require(["jquery", "config", "jswish", "plugin"],
-  function($, config, swish, plugin) {
+require(["jquery", "config", "jswish", "plugin", "mypage"],
+  function($, config, swish, plugin, mypage) {
     var deps = plugin.load();
 
     deps.push(config.http.locations.pengines + "/pengines.js");
@@ -152,6 +156,9 @@ function showLoginModal() {
 function updateLoginStatus() {
   $.get("/user_info", function(response) {
       if (response.logged_in) {
+          window.globalSettings.user = response.user;
+          window.globalSettings.logged_in = true;
+          setMypageButton(true);
           $('#login').text('Logout').removeClass('login').addClass('logout');
           $('#login').off('click').on('click', function(event) {
               event.preventDefault();
@@ -165,6 +172,9 @@ function updateLoginStatus() {
               }, "json");
           });
       } else {
+          window.globalSettings.user = null;
+          window.globalSettings.logged_in = false;
+          setMypageButton(false);
           $('#login').text('Login').removeClass('logout').addClass('login');
           $('#login').off('click').on('click', function(event) {
               event.preventDefault();
@@ -286,3 +296,16 @@ function showSignUpModal() {
     $('#signupModal').remove(); // 모달 제거
   });
 }
+
+
+  /**
+     * Login시에만 mypage 버튼이 보이도록 조절 - 임시
+     */
+  function setMypageButton(isLogin) {
+    if (isLogin) { // 로그인이 true일 때 
+        $('.mypage-button').show();
+        
+      } else {
+        $('.mypage-button').hide();
+      }
+  }

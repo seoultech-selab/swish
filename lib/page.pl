@@ -74,6 +74,7 @@
 :- use_module(chat).
 :- use_module(authenticate).
 :- use_module(pep).
+:- use_module(mypage).
 
 /** <module> Provide the SWISH application as Prolog HTML component
 
@@ -369,17 +370,20 @@ swish_navbar(Options) -->
 			 ul([class([nav, 'navbar-nav', 'navbar-right'])],
 			    [ li(\notifications(Options)),
 			      li(\search_box(Options)),
-			      \li_login_button(Options),
+				  li(\mypage_button),
 			      li(\broadcast_bell(Options)),
 			      li(\updates(Options))
 			    ])
 		       ])
 		 ])).
 
-li_login_button(Options) -->
-	swish_config:li_login_button(Options).
-li_login_button(_Options) -->
-	[].
+mypage_button -->
+    {
+      http_absolute_location(swish(mypage), HREF, [])
+    },
+    html(a([href(HREF), class('mypage-button')], 'MYPAGE')).
+
+mypage_button --> [].
 
 collapsed_button -->
 	html(button([type(button),
@@ -788,7 +792,7 @@ include_swish_css -->
 	},
 	html(link([ rel(stylesheet),
 		    href(SwishCSS)
-		  ])).
+		  ])).	  
 
 swish_resource(Type, ID) :-
 	alt(Type, ID, File),
