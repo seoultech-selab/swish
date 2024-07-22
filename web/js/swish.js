@@ -226,7 +226,6 @@ require(["jquery", "config", "jswish", "plugin", "mypage"],
 //     showSignUpModal();
 //   });
 
-
 // function showSignUpModal() {
 //   const modalContent = `
 //     <div class="modal fade" id="signupModal" tabindex="-1" role="dialog" aria-labelledby="signupModalLabel" aria-hidden="true">
@@ -262,19 +261,19 @@ require(["jquery", "config", "jswish", "plugin", "mypage"],
 //         </div>
 //       </div>
 //     </div>`;
-
+  
 //   $('body').append(modalContent);
 //   $('#signupModal').modal('show');
-
+  
 //   $('#signup-form').on('submit', function(event) {
 //     event.preventDefault();
 //     const formData = {
 //       id: $('#signup-id').val(),
 //       password: $('#signup-password').val(),
-//       username: $('#signup-username').val() || '',  // Optional field
+//       username: $('#signup-username').val() || '',  // 선택적 필드
 //       email: $('#signup-email').val()
 //     };
-
+  
 //     $.ajax({
 //       type: 'POST',
 //       url: '/signup',
@@ -288,19 +287,20 @@ require(["jquery", "config", "jswish", "plugin", "mypage"],
 //             $('.modal-backdrop').remove();
 //             $('#signupModal').remove(); // 모달 제거
 //           });
+//           updateLoginStatus();  // 로그인 상태 업데이트
+//           location.reload();    // 페이지 새로고침
 //         } else {
 //           alert(response.message);
 //         }
 //       }
 //     });
 //   });
-
+  
 //   $('#signupModal').on('hidden.bs.modal', function () {
 //     $('.modal-backdrop').remove();
 //     $('#signupModal').remove(); // 모달 제거
 //   });
 // }
-
 
   // /**
   //    * Login시에만 mypage 버튼이 보이도록 조절 - 임시
