@@ -264,6 +264,7 @@ preferences.setInform("preserve-state", ".unloadable");
         }
     });
   });
+  
   /** @lends $.fn.swish */
   var methods = {
     /**

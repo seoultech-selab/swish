@@ -1,12 +1,5 @@
 [
   {
-    "admin":true,
-    "email":"kimdk9829@gmail.com",
-    "id":"kimdk9829",
-    "password": [89, 97, 72, 72, 47, 51, 90, 72, 80, 104, 104, 49, 46 ],
-    "username":""
-  },
-  {
     "admin":false,
     "email":"kkkk@gmail.com",
     "id":"kimdk9829test",
@@ -26,13 +19,6 @@
     "id":"kdk",
     "password": [112, 122, 71, 49, 73, 87, 55, 106, 85, 120, 121, 83, 46 ],
     "username":""
-  },
-  {
-    "admin":true,
-    "email":"jindae.kim@seoultech.ac.kr",
-    "id":"jindae",
-    "password": [79, 118, 117, 51, 53, 47, 81, 48, 57, 106, 111, 121, 85 ],
-    "username":"Jindae"
   },
   {
     "admin":true,
@@ -82,5 +68,12 @@
     "id":"ff",
     "password": [102, 80, 99, 113, 53, 116, 107, 109, 46, 71, 117, 68, 115 ],
     "username":"ff"
+  },
+  {
+    "admin":true,
+    "email":"kimdk9829@gmail.com",
+    "id":"kimdk9829",
+    "password": [78, 109, 103, 112, 80, 81, 79, 47, 53, 84, 121, 66, 73 ],
+    "username":""
   }
 ]
