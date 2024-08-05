@@ -1,0 +1,37 @@
+<div class="notebook">
+<div class="nb-cell markdown" name="stack-trace">
+Stack Trace
+```
+Exception in thread "main" java.lang.NullPointerException: Cannot invoke "org.junit.platform.launcher.listeners.TestExecutionSummary.getTestsFoundCount()" because "summary" is null
+	at kr.ac.seoultech.selab.logicfl.coverage.JUnit5TestRunner.main(JUnit5TestRunner.java:44)
+
+```
+</div>
+<div class="nb-cell markdown" name="patch">
+Buggy - Fixed Diff.
+```
+N/A
+```
+</div>
+<div class="nb-cell program" data-background="true" name="facts">
+N/A
+</div>
+<div class="nb-cell program" data-background="true" name="npe-rules">
+:- include(npe_rules_curr).
+</div>
+<div class="nb-cell markdown" name="fl_results">
+```
+N/A
+```
+</div>
+<div class="nb-cell query" name="q1">
+npe(X, L)
+</div>
+<div class="nb-cell query" name="q2">
+cause_of(npe(X, L), Cause, Loc), expr(X, Code)
+</div>
+<div class="nb-cell program" data-background="true" name="code-facts">
+N/A
+</div>
+
+</div>
