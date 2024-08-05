@@ -1,0 +1,218 @@
+<div class="notebook">
+<div class="nb-cell markdown" name="stack-trace">
+Stack Trace
+```
+  JUnit Vintage:MessageFactoryTest:testNull
+    MethodSource [className = 'org.apache.commons.math.exception.util.MessageFactoryTest', methodName = 'testNull', methodParameterTypes = '']
+    => java.lang.NullPointerException: Cannot invoke "org.apache.commons.math.exception.util.Localizable.getLocalizedString(java.util.Locale)" because "general" is null
+       org.apache.commons.math.exception.util.MessageFactory.buildMessage(MessageFactory.java:66)
+       org.apache.commons.math.exception.util.MessageFactoryTest.testNull(MessageFactoryTest.java:54)
+       java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+       java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+       java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+       java.base/java.lang.reflect.Method.invoke(Method.java:568)
+       org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+       org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+       org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+       org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+       [...]
+  JUnit Vintage:MessageFactoryTest:testNullGeneral
+    MethodSource [className = 'org.apache.commons.math.exception.util.MessageFactoryTest', methodName = 'testNullGeneral', methodParameterTypes = '']
+    => java.lang.NullPointerException: Cannot invoke "org.apache.commons.math.exception.util.Localizable.getLocalizedString(java.util.Locale)" because "general" is null
+       org.apache.commons.math.exception.util.MessageFactory.buildMessage(MessageFactory.java:66)
+       org.apache.commons.math.exception.util.MessageFactoryTest.testNullGeneral(MessageFactoryTest.java:46)
+       java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+       java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+       java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+       java.base/java.lang.reflect.Method.invoke(Method.java:568)
+       org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+       org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+       org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+       org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+       [...]
+
+```
+</div>
+<div class="nb-cell markdown" name="patch">
+Buggy - Fixed Diff.
+```
+diff -U 5 -r math//math_npe_3/buggy/src/main/java/org/apache/commons/math/exception/util/MessageFactory.java math//math_npe_3/fixed/src/main/java/org/apache/commons/math/exception/util/MessageFactory.java
+--- math//math_npe_3/buggy/src/main/java/org/apache/commons/math/exception/util/MessageFactory.java	2024-01-09 23:24:57.731326918 +0900
++++ math//math_npe_3/fixed/src/main/java/org/apache/commons/math/exception/util/MessageFactory.java	2024-01-09 23:25:04.643389590 +0900
+@@ -48,12 +48,12 @@
+     /**
+      * Builds a message string by from two patterns (specific and general) and
+      * an argument list.
+      *
+      * @param locale Locale in which the message should be translated.
+-     * @param specific Format specifier.
+-     * @param general Format specifier.
++     * @param specific Format specifier (may be null).
++     * @param general Format specifier (may be null).
+      * @param arguments Format arguments. They will be substituted first in
+      * the {@code specific} format specifier, then the remaining arguments
+      * will be substituted in the {@code general} format specifier.
+      * @return a localized message string.
+      */
+@@ -61,11 +61,10 @@
+                                       Localizable specific,
+                                       Localizable general,
+                                       Object ... arguments) {
+ 
+         final StringBuilder sb = new StringBuilder();
+-        final MessageFormat generalFmt  = new MessageFormat(general.getLocalizedString(locale), locale);
+         Object[] generalArgs = arguments;
+ 
+         if (specific != null) {
+ 
+             final MessageFormat specificFmt = new MessageFormat(specific.getLocalizedString(locale), locale);
+@@ -78,14 +77,19 @@
+             generalArgs = new Object[nbGeneral];
+             System.arraycopy(arguments, nbSpecific, generalArgs, 0, nbGeneral);
+ 
+             // build the message
+             sb.append(specificFmt.format(specificArgs));
+-            sb.append(": ");
+ 
+         }
+ 
+-        sb.append(generalFmt.format(generalArgs));
++        if (general != null) {
++            if (specific != null) {
++                sb.append(": ");
++            }
++            final MessageFormat generalFmt  = new MessageFormat(general.getLocalizedString(locale), locale);
++            sb.append(generalFmt.format(generalArgs));
++        }
+ 
+         return sb.toString();
+     }
+ }
+
+```
+</div>
+<div class="nb-cell program" data-background="true" name="facts">
+%%% Logic-FL Facts
+:- style_check(-discontiguous).
+
+%message_factory1 - org.apache.commons.math.exception.util.MessageFactory
+param(p_locale_4, 1, m_build_message_6).
+param(p_pattern_5, 2, m_build_message_6).
+param(p_arguments_6, 3, m_build_message_6).
+param(p_locale_7, 1, m_build_message_7).
+param(p_specific_8, 2, m_build_message_7).
+param(p_general_9, 3, m_build_message_7).
+param(p_arguments_10, 4, m_build_message_7).
+assign(v_sb_11, message_factory1_expr1, line(message_factory1, 65)).
+method_invoc(message_factory1_expr1, m_string_builder_8, line(message_factory1, 65)).
+assign(v_general_fmt_12, message_factory1_expr2, line(message_factory1, 66)).
+method_invoc(message_factory1_expr2, m_message_format_9, line(message_factory1, 66)).
+argument(message_factory1_expr3, 1, message_factory1_expr2).
+argument(p_locale_7, 2, message_factory1_expr2).
+method_invoc(message_factory1_expr3, m_get_localized_string_10, line(message_factory1, 66)).
+argument(p_locale_7, 1, message_factory1_expr3).
+ref(p_general_9, line(message_factory1, 66)).
+
+%dummy_localizable1 - org.apache.commons.math.exception.util.DummyLocalizable
+param(p_source_1, 1, m_dummy_localizable_1).
+assign(dummy_localizable1_expr1, p_source_1, line(dummy_localizable1, 39)).
+ref(f_source_2, dummy_localizable1_expr1, line(dummy_localizable1, 39)).
+ref(dummy_localizable1_expr2, line(dummy_localizable1, 39)).
+param(p_locale_3, 1, m_get_localized_string_3).
+
+%message_factory_test1 - org.apache.commons.math.exception.util.MessageFactoryTest
+
+
+
+
+%%% End of Static Facts
+
+%%% Values
+
+val(p_general_9, null, line(message_factory1, 66)).
+
+
+
+%%% End of Facts
+</div>
+<div class="nb-cell program" data-background="true" name="npe-rules">
+:- include(npe_rules_curr).
+:- include(common_utils).
+</div>
+<div class="nb-cell markdown" name="fl_results">
+```
+Fault Localization Results
+p_general_9[general] - line(message_factory1, 66)
+ caused by 
+p_general_9[general] - line(message_factory1, 66)
+```
+</div>
+<div class="nb-cell query" name="q1">
+npe(X, L)
+</div>
+<div class="nb-cell query" name="q2">
+bagof((X, L, Cause, Code, Loc), (cause_of(npe(X, L), Cause, Loc), expr(Cause, Code)), TotalCauses),
+remove_duplicates(TotalCauses, UniqueCauses),
+explain(UniqueCauses, Explanations).
+
+</div>
+<div class="nb-cell program" data-background="true" name="code-facts">
+%%% Code Facts
+%%% Classes
+class(message_factory1, 'org.apache.commons.math.exception.util.MessageFactory').
+class(dummy_localizable1, 'org.apache.commons.math.exception.util.DummyLocalizable').
+class(message_factory_test1, 'org.apache.commons.math.exception.util.MessageFactoryTest').
+
+%%% Methods
+
+method(m_message_factory_5, message_factory1, 29, 32).
+method(m_build_message_6, message_factory1, 34, 46).
+method(m_build_message_7, message_factory1, 48, 90).
+
+method(m_dummy_localizable_1, dummy_localizable1, 35, 40).
+method(m_get_source_string_2, dummy_localizable1, 42, 45).
+method(m_get_localized_string_3, dummy_localizable1, 47, 50).
+method(m_to_string_4, dummy_localizable1, 52, 56).
+
+
+%%% Expressions
+%message_factory1 - org.apache.commons.math.exception.util.MessageFactory
+expr(message_factory1_expr1, "new StringBuilder()").
+expr(message_factory1_expr2, "new MessageFormat(general.getLocalizedString(locale),locale)").
+expr(message_factory1_expr3, "general.getLocalizedString(locale)").
+%dummy_localizable1 - org.apache.commons.math.exception.util.DummyLocalizable
+expr(dummy_localizable1_expr1, "this.source").
+expr(dummy_localizable1_expr2, "this").
+%message_factory_test1 - org.apache.commons.math.exception.util.MessageFactoryTest
+
+%%% Names
+
+name(p_source_1, 'source', 'Lorg/apache/commons/math/exception/util/DummyLocalizable;.(Ljava/lang/String;)V#source#0#0').
+name(f_source_2, 'source', 'Lorg/apache/commons/math/exception/util/DummyLocalizable;.source)Ljava/lang/String;').
+name(p_locale_3, 'locale', 'Lorg/apache/commons/math/exception/util/DummyLocalizable;.getLocalizedString(Ljava/util/Locale;)Ljava/lang/String;#locale#0#0').
+name(p_locale_4, 'locale', 'Lorg/apache/commons/math/exception/util/MessageFactory;.buildMessage(Ljava/util/Locale;Lorg/apache/commons/math/exception/util/Localizable;[Ljava/lang/Object;)Ljava/lang/String;#locale#0#0').
+name(p_pattern_5, 'pattern', 'Lorg/apache/commons/math/exception/util/MessageFactory;.buildMessage(Ljava/util/Locale;Lorg/apache/commons/math/exception/util/Localizable;[Ljava/lang/Object;)Ljava/lang/String;#pattern#0#1').
+name(p_arguments_6, 'arguments', 'Lorg/apache/commons/math/exception/util/MessageFactory;.buildMessage(Ljava/util/Locale;Lorg/apache/commons/math/exception/util/Localizable;[Ljava/lang/Object;)Ljava/lang/String;#arguments#0#2').
+name(p_locale_7, 'locale', 'Lorg/apache/commons/math/exception/util/MessageFactory;.buildMessage(Ljava/util/Locale;Lorg/apache/commons/math/exception/util/Localizable;Lorg/apache/commons/math/exception/util/Localizable;[Ljava/lang/Object;)Ljava/lang/String;#locale#0#0').
+name(p_specific_8, 'specific', 'Lorg/apache/commons/math/exception/util/MessageFactory;.buildMessage(Ljava/util/Locale;Lorg/apache/commons/math/exception/util/Localizable;Lorg/apache/commons/math/exception/util/Localizable;[Ljava/lang/Object;)Ljava/lang/String;#specific#0#1').
+name(p_general_9, 'general', 'Lorg/apache/commons/math/exception/util/MessageFactory;.buildMessage(Ljava/util/Locale;Lorg/apache/commons/math/exception/util/Localizable;Lorg/apache/commons/math/exception/util/Localizable;[Ljava/lang/Object;)Ljava/lang/String;#general#0#2').
+name(p_arguments_10, 'arguments', 'Lorg/apache/commons/math/exception/util/MessageFactory;.buildMessage(Ljava/util/Locale;Lorg/apache/commons/math/exception/util/Localizable;Lorg/apache/commons/math/exception/util/Localizable;[Ljava/lang/Object;)Ljava/lang/String;#arguments#0#3').
+name(v_sb_11, 'sb', 'Lorg/apache/commons/math/exception/util/MessageFactory;.buildMessage(Ljava/util/Locale;Lorg/apache/commons/math/exception/util/Localizable;Lorg/apache/commons/math/exception/util/Localizable;[Ljava/lang/Object;)Ljava/lang/String;#sb').
+name(v_general_fmt_12, 'generalFmt', 'Lorg/apache/commons/math/exception/util/MessageFactory;.buildMessage(Ljava/util/Locale;Lorg/apache/commons/math/exception/util/Localizable;Lorg/apache/commons/math/exception/util/Localizable;[Ljava/lang/Object;)Ljava/lang/String;#generalFmt').
+name(m_dummy_localizable_1, 'DummyLocalizable', 'Lorg/apache/commons/math/exception/util/DummyLocalizable;.(Ljava/lang/String;)V').
+name(m_get_source_string_2, 'getSourceString', 'Lorg/apache/commons/math/exception/util/DummyLocalizable;.getSourceString()Ljava/lang/String;').
+name(m_get_localized_string_3, 'getLocalizedString', 'Lorg/apache/commons/math/exception/util/DummyLocalizable;.getLocalizedString(Ljava/util/Locale;)Ljava/lang/String;').
+name(m_to_string_4, 'toString', 'Lorg/apache/commons/math/exception/util/DummyLocalizable;.toString()Ljava/lang/String;').
+name(m_message_factory_5, 'MessageFactory', 'Lorg/apache/commons/math/exception/util/MessageFactory;.()V').
+name(m_build_message_6, 'buildMessage', 'Lorg/apache/commons/math/exception/util/MessageFactory;.buildMessage(Ljava/util/Locale;Lorg/apache/commons/math/exception/util/Localizable;[Ljava/lang/Object;)Ljava/lang/String;').
+name(m_build_message_7, 'buildMessage', 'Lorg/apache/commons/math/exception/util/MessageFactory;.buildMessage(Ljava/util/Locale;Lorg/apache/commons/math/exception/util/Localizable;Lorg/apache/commons/math/exception/util/Localizable;[Ljava/lang/Object;)Ljava/lang/String;').
+name(m_string_builder_8, 'StringBuilder', 'Ljava/lang/StringBuilder;.()V').
+name(m_message_format_9, 'MessageFormat', 'Ljava/text/MessageFormat;.(Ljava/lang/String;Ljava/util/Locale;)V').
+name(m_get_localized_string_10, 'getLocalizedString', 'Lorg/apache/commons/math/exception/util/Localizable;.getLocalizedString(Ljava/util/Locale;)Ljava/lang/String;').
+
+%%% End of Code Facts
+
+
+</div>
+
+</div>

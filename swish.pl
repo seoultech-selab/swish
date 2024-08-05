@@ -51,6 +51,7 @@
 :- use_module(lib/storage).
 :- use_module(lib/include).
 :- use_module(lib/swish_csv).
+:- use_module(lib/benchmark).
 :- use_module(lib/examples).
 :- use_module(lib/profiles).
 :- use_module(lib/highlight).
