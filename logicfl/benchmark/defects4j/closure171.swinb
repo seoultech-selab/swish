@@ -1,0 +1,105 @@
+<div class="notebook">
+<div class="nb-cell markdown" name="stack-trace">
+Stack Trace
+```
+testPropertiesOnInterface2(com.google.javascript.jscomp.TypedScopeCreatorTest): com/google/javascript/rhino/head/ErrorReporter
+com/google/javascript/rhino/head/ErrorReporter
+java.lang.NoClassDefFoundError: com/google/javascript/rhino/head/ErrorReporter
+	at com.google.javascript.jscomp.Compiler.<init>(Compiler.java:178)
+	at com.google.javascript.jscomp.Compiler.<init>(Compiler.java:240)
+	at com.google.javascript.jscomp.CompilerTestCase.createCompiler(CompilerTestCase.java:1125)
+	at com.google.javascript.jscomp.CompilerTestCase.test(CompilerTestCase.java:461)
+	at com.google.javascript.jscomp.CompilerTestCase.test(CompilerTestCase.java:403)
+	at com.google.javascript.jscomp.CompilerTestCase.test(CompilerTestCase.java:372)
+	at com.google.javascript.jscomp.CompilerTestCase.test(CompilerTestCase.java:360)
+	at com.google.javascript.jscomp.CompilerTestCase.testSame(CompilerTestCase.java:599)
+	at com.google.javascript.jscomp.TypedScopeCreatorTest.testPropertiesOnInterface2(TypedScopeCreatorTest.java:533)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:578)
+	at junit.framework.TestCase.runTest(TestCase.java:177)
+	at junit.framework.TestCase.runBare(TestCase.java:142)
+	at junit.framework.TestResult$1.protect(TestResult.java:122)
+	at junit.framework.TestResult.runProtected(TestResult.java:142)
+	at junit.framework.TestResult.run(TestResult.java:125)
+	at junit.framework.TestCase.run(TestCase.java:130)
+	at junit.framework.TestSuite.runTest(TestSuite.java:241)
+	at junit.framework.TestSuite.run(TestSuite.java:236)
+	at org.junit.internal.runners.JUnit38ClassRunner.run(JUnit38ClassRunner.java:90)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+	at kr.ac.seoultech.selab.logicfl.coverage.JUnit4TestRunner.main(JUnit4TestRunner.java:33)
+Caused by: java.lang.ClassNotFoundException: com.google.javascript.rhino.head.ErrorReporter
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:641)
+	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:521)
+	... 22 more
+
+
+
+```
+</div>
+<div class="nb-cell markdown" name="patch">
+Buggy - Fixed Diff.
+```
+diff -U 5 -r defects4j_no_coverage//Closure-171/buggy/src/com/google/javascript/jscomp/TypedScopeCreator.java defects4j_no_coverage//Closure-171/fixed/src/com/google/javascript/jscomp/TypedScopeCreator.java
+--- defects4j_no_coverage//Closure-171/buggy/src/com/google/javascript/jscomp/TypedScopeCreator.java	2024-04-14 01:04:32.000000000 +0900
++++ defects4j_no_coverage//Closure-171/fixed/src/com/google/javascript/jscomp/TypedScopeCreator.java	2024-04-14 01:04:44.000000000 +0900
+@@ -1664,10 +1664,13 @@
+       if (valueType == null) {
+         return true;
+       }
+ 
+       // Prototype sets are always declared.
++      if (qName != null && qName.endsWith(".prototype")) {
++        return false;
++      }
+ 
+       boolean inferred = true;
+       if (info != null) {
+         inferred = !(info.hasType()
+             || info.hasEnumParameterType()
+diff -U 5 -r defects4j_no_coverage//Closure-171/buggy/src/com/google/javascript/jscomp/TypeInference.java defects4j_no_coverage//Closure-171/fixed/src/com/google/javascript/jscomp/TypeInference.java
+--- defects4j_no_coverage//Closure-171/buggy/src/com/google/javascript/jscomp/TypeInference.java	2024-04-14 01:04:32.000000000 +0900
++++ defects4j_no_coverage//Closure-171/fixed/src/com/google/javascript/jscomp/TypeInference.java	2024-04-14 01:04:44.000000000 +0900
+@@ -726,16 +726,11 @@
+ 
+     // Object literals can be reflected on other types.
+     // See CodingConvention#getObjectLiteralCase and goog.object.reflect.
+     // Ignore these types of literals.
+     ObjectType objectType = ObjectType.cast(type);
+-    if (objectType == null) {
+-      return scope;
+-    }
+-    boolean hasLendsName = n.getJSDocInfo() != null &&
+-        n.getJSDocInfo().getLendsName() != null;
+-    if (objectType.hasReferenceName() && !hasLendsName) {
++    if (objectType == null || n.getBooleanProp(Node.REFLECTED_OBJECT)) {
+       return scope;
+     }
+ 
+     String qObjName = NodeUtil.getBestLValueName(
+         NodeUtil.getBestLValue(n));
+
+```
+</div>
+<div class="nb-cell program" data-background="true" name="facts">
+N/A
+</div>
+<div class="nb-cell program" data-background="true" name="npe-rules">
+:- include(npe_rules_curr).
+</div>
+<div class="nb-cell markdown" name="fl_results">
+```
+Fault Localization Results
+```
+</div>
+<div class="nb-cell query" name="q1">
+npe(X, L)
+</div>
+<div class="nb-cell query" name="q2">
+cause_of(npe(X, L), Cause, Loc), expr(X, Code)
+</div>
+<div class="nb-cell program" data-background="true" name="code-facts">
+N/A
+</div>
+
+</div>
