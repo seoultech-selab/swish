@@ -179,7 +179,7 @@ preferences.setInform("preserve-state", ".unloadable");
 	}
       },
       "Examples": function(navbar, dropdown) {
-	$("body").swish('populateExamples', navbar, dropdown);
+	        $("body").swish('populateExamples', navbar, dropdown);
       },
       "Help": function(navbar, dropdown) {
 	        $("body").swish('populateHelp', navbar, dropdown);
@@ -288,85 +288,94 @@ preferences.setInform("preserve-state", ".unloadable");
       this.addClass("swish");
 
       return this.each(function() {
-	var elem = $(this);
-	var data = {};			/* private data */
+	      var elem = $(this);
+	      var data = {};			/* private data */
 
-	$("#navbar").navbar(defaults.menu);
-  setupLoginButton();
-  $("#login").newLogin(); // 새로운 로그인 함수 호출
-	//$("#login").login();
+        $("#navbar").navbar(defaults.menu);
+        setupBenchmarkButton();
+        setupLoginButton();
+        $("#login").newLogin(); // 새로운 로그인 함수 호출
+        //$("#login").login();
 
-	var  editor = $(".prolog-editor").prologEditor({save:true});
-	data.runner = $(".prolog-runners").prologRunners();
-	data.query  = $(".prolog-query").queryEditor(
-          { source:   function() {
-	      return elem.swish('prologSource');
-	    },
-	    sourceID: function() {
-	      return editor.prologEditor('getSourceID');
-	    },
-	    examples: elem.swish('examples'),
-	    runner:   data.runner,
-	    editor:   editor[0]
-	  });
-	elem.data(pluginName, data);	/* store with element */
-	data.restoring = true;
+        var  editor = $(".prolog-editor").prologEditor({save:true});
+        data.runner = $(".prolog-runners").prologRunners();
+        data.query  = $(".prolog-query").queryEditor({ 
+          source:   function() {
+            return elem.swish('prologSource');
+          },
+          sourceID: function() {
+            return editor.prologEditor('getSourceID');
+          },
+          examples: elem.swish('examples'),
+          runner:   data.runner,
+          editor:   editor[0]
+        });
+        elem.data(pluginName, data);	/* store with element */
+        data.restoring = true;
 
-	$(".notebook").notebook();
+        $(".notebook").notebook();
 
-	if ( options.show_beware &&
-	     !(swish.option && swish.option.show_beware == false) )
-	  menuBroadcast("help", {file:"beware.html", notagain:"beware"});
+        if ( options.show_beware &&
+            !(swish.option && swish.option.show_beware == false) )
+          menuBroadcast("help", {file:"beware.html", notagain:"beware"});
 
-	if ( window.location.href.indexOf("&togetherjs=") > 0 )
-	  elem.swish('collaborate');
+        if ( window.location.href.indexOf("&togetherjs=") > 0 )
+          elem.swish('collaborate');
 
-	$("#chat").chat('');
-	$("#broadcast-bell")
-		.chatbell({
-		  empty_title: "Click to open chat"
-		});
+        $("#chat").chat('');
+        $("#broadcast-bell")
+          .chatbell({
+            empty_title: "Click to open chat"
+          });
 
-	$("#chat-menu").on("click", "a", function(ev) {
-	  var a = $(ev.target).closest("a");
-	  switch ( a.data('action') ) {
-	  case 'chat-shared':
-	    $("body").swish('playFile', {
-	      file: config.swish.hangout,
-	      chat: 'large'
-	    });
-	    break;
-	  case 'chat-about-file':
-	    menuBroadcast("chat-about-file");
-	  }
-	});
+        $("#chat-menu").on("click", "a", function(ev) {
+          var a = $(ev.target).closest("a");
+          switch ( a.data('action') ) {
+          case 'chat-shared':
+            $("body").swish('playFile', {
+              file: config.swish.hangout,
+              chat: 'large'
+            });
+            break;
+          case 'chat-about-file':
+            menuBroadcast("chat-about-file");
+          }
+        });
 
-	if ( config.swish.redis ) {
-	  showBackends = function() {
-	    backend.selectBackend();
-	  };
-	  showBackends.glyph = "flash";
-	  showBackends.after = "Open recent";
+        if ( config.swish.redis ) {
+          showBackends = function() {
+            backend.selectBackend();
+          };
+          showBackends.glyph = "flash";
+          showBackends.after = "Open recent";
 
-	  $("#navbar").
-	    navbar('populateDropdown',
-		   "File",
-		   { "Backends ...": showBackends
-		   });
-	}
+          $("#navbar").
+            navbar('populateDropdown',
+            "File",
+            { "Backends ...": showBackends
+            });
+        }
 
-	setInterval(function(){
-	  $(".each-minute").trigger("minute");
-	}, 60000);
+        // URL 경로에서 파일 경로를 추출하여 playURL을 호출하는 부분 추가
+        // var urlPath = window.location.pathname;
+        // if (urlPath.startsWith('/logicfl')) {
+        //   var filePath = window.location.origin + urlPath;
+        //   elem.swish('playURL', { url: filePath });
+        // }
 
-	if ( elem[pluginName]('preserve_state') )
-	{ $(".unloadable").trigger("restore");
-	}
+        setInterval(function(){
+          $(".each-minute").trigger("minute");
+        }, 60000);
 
-	delete data.restoring;
-	elem[pluginName]('runDelayedRestore');
-	$().version('checkForUpdates');
-	elem.trigger("post-config");
+        if ( elem[pluginName]('preserve_state') )
+        { 
+          $(".unloadable").trigger("restore");
+        }
+
+        delete data.restoring;
+        elem[pluginName]('runDelayedRestore');
+        $().version('checkForUpdates');
+        elem.trigger("post-config");
       });
     },
 
@@ -458,43 +467,39 @@ preferences.setInform("preserve-state", ".unloadable");
      * be used to highlight the Prolog port at the indicated location.
      */
     playFile: function(options) {
-      var elem = this;
-      if ( typeof(options) == "string" )
-	options = {file:options};
+        var elem = this;
+        if ( typeof(options) == "string" )
+          options = {file:options};
 
-      var existing = this.find(".storage").storage('match', options);
-      if ( existing && existing.storage('expose', "Already open") )
-	return this;				/* FIXME: go to line */
+        var existing = this.find(".storage").storage('match', options);
+        if ( existing && existing.storage('expose', "Already open") )
+          return this;				/* FIXME: go to line */
 
-      var url = config.http.locations.web_storage + options.file;
-      backend.ajax(
-	{ url: url,
-	  type: "GET",
-	  data: {format: "json"},
-	  success: function(reply) {
-	    reply.url = url;
-	    reply.st_type = "gitty";
+        var url = config.http.locations.web_storage + options.file;
+        backend.ajax({ 
+          url: url,
+          type: "GET",
+          data: {format: "json"},
+          success: function(reply) {
+            reply.url = url;
+            reply.st_type = "gitty";
 
-	    function copyAttrs(names) {
-	      for(var i=0; i<names.length; i++) {
-		var name = names[i];
-		if ( options[name] )
-		  reply[name] = options[name];
-	      }
-	    }
+            function copyAttrs(names) {
+              for(var i=0; i<names.length; i++) {
+                var name = names[i];
+                if ( options[name] )
+                  reply[name] = options[name];
+              }
+            }
 
-	    copyAttrs([ "line",
-			"regex", "showAllMatches",
-			"newTab", "noHistory",
-			"prompt", "chat"
-		      ]);
+            copyAttrs([ "line", "regex", "showAllMatches", "newTab", "noHistory","prompt", "chat"]);
 
-	    elem.swish('setSource', reply);
-	  },
-	  error: function(jqXHR) {
-	    modal.ajaxError(jqXHR);
-	  }
-	});
+            elem.swish('setSource', reply);
+          },
+          error: function(jqXHR) {
+            modal.ajaxError(jqXHR);
+          }
+	    });
 
       return this;
     },
@@ -513,49 +518,44 @@ preferences.setInform("preserve-state", ".unloadable");
       var existing = this.find(".storage").storage('match', options);
 
       if ( existing && existing.storage('expose', "Already open") )
-	return this;				/* FIXME: go to line */
+	      return this;				/* FIXME: go to line */
 
-      backend.ajax(
-	{ url: options.url,
-	  type: "GET",
-	  data: {format: "json"},
-	  success: function(source) {
-	    var msg;
+      backend.ajax({ 
+        url: options.url,
+	      type: "GET",
+	      data: {format: "json"},
+	      success: function(source) {
+          var msg;
 
-	    if ( typeof(source) == "string" ) {
-	      msg = { data: source };
-	      msg.st_type = "external";
-	    } else if ( typeof(source) == "object" &&
-			typeof(source.data) == "string" ) {
-	      msg = source;
-	      msg.st_type = "filesys";
-	    } else {
-	      alert("Invalid data");
-	      return;
-	    }
+          if ( typeof(source) == "string" ) {
+            msg = { data: source };
+            msg.st_type = "external";
+          } else if ( typeof(source) == "object" && typeof(source.data) == "string" ) {
+            msg = source;
+            msg.st_type = "filesys";
+          } else {
+            alert("Invalid data");
+            return;
+          }
 
-	    msg.url  = options.url;
+          msg.url  = options.url;
 
-	    function copyAttrs(names) {
-	      for(var i=0; i<names.length; i++) {
-		var name = names[i];
-		if ( options[name] )
-		  msg[name] = options[name];
-	      }
-	    }
+          function copyAttrs(names) {
+            for(var i=0; i<names.length; i++) {
+              var name = names[i];
+              if ( options[name] )
+                msg[name] = options[name];
+            }
+          }
 
-	    copyAttrs([ "line",
-			"regex", "showAllMatches",
-			"newTab", "noHistory",
-			"prompt"
-		      ]);
+          copyAttrs(["line", "regex", "showAllMatches", "newTab", "noHistory", "prompt"]);
 
-	    elem.swish('setSource', msg);
-	  },
-	  error: function(jqXHR) {
-	    modal.ajaxError(jqXHR);
-	  }
-	});
+          elem.swish('setSource', msg);
+        },
+        error: function(jqXHR) {
+          modal.ajaxError(jqXHR);
+        }
+	    });
     },
 
     /**
@@ -567,9 +567,9 @@ preferences.setInform("preserve-state", ".unloadable");
       var st = this.swish('isFullscreen');
 
       if ( !(st && st.storage('setSource', src)) ) {
-	if ( st )
-	  this.swish('exitFullscreen');
-	this.find(".tabbed").tabbed('tabFromSource', src);
+	        if ( st )
+	          this.swish('exitFullscreen');
+	        this.find(".tabbed").tabbed('tabFromSource', src);
       }
 
       return this;
@@ -588,15 +588,15 @@ preferences.setInform("preserve-state", ".unloadable");
       var swish = this;
 
       if ( ex.type == "divider" ) {
-	return "--";
+        return "--";
       } else if ( ex.type == "store" ) {
-	return function() {
-	  methods.playFile.call(swish, ex.file);
-	};
+          return function() {
+          methods.playFile.call(swish, ex.file);
+        };
       } else {
-	return function() {
-	  methods.playURL.call(swish, {url:ex.href});
-	};
+          return function() {
+          methods.playURL.call(swish, {url:ex.href});
+        };
       }
     },
 
@@ -688,7 +688,6 @@ preferences.setInform("preserve-state", ".unloadable");
 	});
       return this;
     },
-
 
     /**
      * pick up all Prolog sources, preparing to execute a query. Currently
@@ -956,6 +955,25 @@ preferences.setInform("preserve-state", ".unloadable");
           <a href="#" id="login" class="dropdown-toggle" data-toggle="dropdown">Login</a>
         </li>
       `);
+    }
+  }
+
+    /* Benchmark 버튼 추가 */
+  function setupBenchmarkButton() {
+    // 네비게이션 바에 Benchmark 메뉴 항목을 한 번만 추가
+    if ($('#benchmark-menu').length === 0) {
+      $('#navbar > ul.nav.navbar-nav.menubar').append(`
+        <li class="dropdown" id="benchmark-menu">
+          <a href="#" id="benchmark" class="dropdown-toggle">Benchmark</a>
+        </li>
+      `);
+      
+      // Benchmark 버튼 클릭 시 이벤트 핸들러 추가
+      $('#benchmark').on('click', function() {
+        var origin = window.location.origin;
+        var url = origin + '/logicfl/benchmark.swinb';
+        $("body").swish('playURL', { url: url });
+      });
     }
   }
 
