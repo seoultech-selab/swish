@@ -70,10 +70,24 @@
     "username":"ff"
   },
   {
+    "admin":false,
+    "email":"kimdk9839@gmail.com",
+    "id":"kimdk9839",
+    "password": [83, 87, 73, 47, 82, 106, 50, 121, 111, 106, 118, 47, 111 ],
+    "username":""
+  },
+  {
+    "admin":false,
+    "email":"kimdk@gmail.com",
+    "id":"kimdk9829s",
+    "password": [80, 118, 97, 97, 98, 50, 112, 108, 65, 109, 57, 82, 111 ],
+    "username":""
+  },
+  {
     "admin":true,
     "email":"kimdk9829@gmail.com",
     "id":"kimdk9829",
-    "password": [78, 109, 103, 112, 80, 81, 79, 47, 53, 84, 121, 66, 73 ],
+    "password": [78, 120, 83, 73, 51, 83, 72, 116, 119, 120, 78, 98, 85 ],
     "username":""
   }
 ]
