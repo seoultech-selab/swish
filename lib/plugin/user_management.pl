@@ -21,9 +21,6 @@
 :- use_module(library(filesex)).  % make_directory_path/1를 사용하기 위해 필요
 :- use_module(library(debug)). % 디버깅을 위해 추가
 
-% 서버 시작 시 초기화
-:- initialization(initialize_db).
-
 initialize_db :-
     File = '/swish/lib/plugin/users.json',  % 절대 경로로 설정
     (   exists_file(File)
@@ -236,7 +233,7 @@ logout_handler(_Request) :-
     http_session_retract(user(_)),
     http_session_retract(user_role(_)),
     reply_json_dict(_{success: true}).
-    http_redirect(moved, '/', Request).
+    http_redirect(moved, '/', _Request).
 
 % 로그인 상태 확인 핸들러
 user_info_handler(_Request) :-
