@@ -54,6 +54,8 @@
 
 :- use_module('../config', []).
 :- use_module(user_management). % 모듈 추가
+:- use_module(send_reset_email).% 모듈 추가 
+:- use_module(admin_page).
 
 :- multifile
     swish_config:login/2,
@@ -79,6 +81,7 @@ configuration files in =config-available=.
 :- http_handler('/user_info', user_management:user_info_handler, [id(user_info)]).
 :- http_handler('/signup', user_management:signup_handler, [method(post)]).  % user_management 모듈의 signup_handler/1을 사용
 :- http_handler('/authenticate', user_management:login_handler, [method(post)]).  % 로그인 핸들러 추가
+:- http_handler(root(forgot_password_form), send_reset_email:forgot_password_form_handler, [method(get)]).
 
 login_form(_Request) -->
     html(
@@ -94,7 +97,8 @@ login_form(_Request) -->
                     input([type=password, name=password, id=password, class('form-control')])
                 ]),
                 div(class('form-group'), [
-                    input([type=submit, value='Login', class('btn btn-primary')])
+                    input([type=submit, value='Login', class('btn btn-primary')]),
+                    a([ href('/forgot_password_form'), class('btn btn-link'), style('margin-left: 10px;')], 'Forgot Password')  % href 수정
                 ])
             ])
         ])
