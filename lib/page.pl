@@ -75,6 +75,7 @@
 :- use_module(authenticate).
 :- use_module(pep).
 :- use_module(mypage).
+:- use_module('/swish/lib/plugin/admin').
 
 /** <module> Provide the SWISH application as Prolog HTML component
 
