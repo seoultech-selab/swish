@@ -32,6 +32,13 @@
   position: absolute;
 }
 
+.nb-toolbar .btn.disabled
+{ 
+  opacity: 0.6;
+  pointer-events: none; /* 클릭 이벤트 비활성화 */
+  cursor: not-allowed; /* 커서 모양 변경 */
+}
+
 div.notebook-menu {
  display: none;
 }
