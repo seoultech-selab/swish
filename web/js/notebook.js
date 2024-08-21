@@ -85,6 +85,9 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
 	var storage = {};		/* storage info */
 	var data = {};			/* private data */
 	var toolbar, content;
+  // Ctrl 키 상태를 추적하는 변수
+  var isCtrlPressed = false;
+  var selectedCells = [];
 
 	elem.addClass("notebook");
 	elem.addClass("swish-event-receiver");
@@ -206,15 +209,40 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
 	  return false;
 	});
 
+  $(content).on("keydown", function(ev) {
+    if (ev.key === "Control") {
+        isCtrlPressed = true;
+    }
+  });
+
+  $(content).on("keyup", function(ev) {
+    if (ev.key === "Control") {
+        isCtrlPressed = false;
+    }
+  });
+
 	elem.focusin(function(ev) {
 	  var cell = $(ev.target).closest(".nb-cell");
 	  if ( cell.length > 0 ) {
-	    elem.notebook('active', cell);
-	  } else if ( $(ev.target).closest(".nb-view").length > 0 )
-	  { elem.find(".nb-content").children(".nb-cell.active")
-				    .nbCell('active', false);
+      if (isCtrlPressed) {
+        var cellIndex = selectedCells.indexOf(cell[0]);
+        if (cellIndex === -1) { 
+            selectedCells.push(cell[0]);
+        }
+      } 
+      else {
+        selectedCells = [cell[0]];
+      }
+
+      updateToolbarButtons(selectedCells.length > 1);
+      elem.notebook('active', $(selectedCells), true);
+	  } else if ( $(ev.target).closest(".nb-view").length > 0 ){ 
+      elem.find(".nb-content").children(".nb-cell.active")
+				  .nbCell('active', false);
+      selectedCells = [];
 	  }
 	});
+
 	elem.focusout(function(ev) {
 	  if ( $(ev.target).closest(".notebook")[0] != elem[0] ) {
 	    elem.find(".nb-content").children(".nb-cell.active")
@@ -307,10 +335,9 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
     delete: function(cell) {
       cell = cell||currentCell(this);
       if ( cell ) {
-	this.notebook('active',
-		      cell.nbCell('next')||cell.nbCell('prev'));
-	cell.nbCell('close');
-	this.notebook('updatePlaceHolder');
+        this.notebook('active', cell.last().nbCell('next')||cell.first().nbCell('prev'));
+        cell.nbCell('close');
+        this.notebook('updatePlaceHolder');
       }
       this.notebook('checkModified');
       return this;
@@ -319,10 +346,13 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
     copy: function(cell) {
       cell = cell||currentCell(this);
       if ( cell ) {
-	var dom = $.el.div({class:"notebook"});
-	$(dom).append($(cell).nbCell('saveDOM'));
-	$(dom).find(".nb-cell").removeAttr("name");
-	clipboard = stringifyNotebookDOM(dom);
+        var dom = $.el.div({class:"notebook"});
+
+        cell.each(function() {
+          $(dom).append($(this).nbCell('saveDOM'));
+        });
+        $(dom).find(".nb-cell").removeAttr("name");
+        clipboard = stringifyNotebookDOM(dom);
       }
     },
 
@@ -331,23 +361,24 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
 
       text = text||clipboard;
       if ( text ) {
-	var dom = $.el.div();
+	      var dom = $.el.div();
 
-	$(dom).html(text);
-	var cells = $(dom).find(".nb-cell");
-	if ( cells.length > 0 ) {
-	  $(dom).find(".nb-cell").each(function() {
-	    nb.notebook('insert', {
-	      where: "below",
-	      restore: $(this)
-	    });
-	  });
-	  return this;
-	} else {
-	  modal.alert("Not a SWISH notebook");
-	}
+        $(dom).html(text);
+
+        var cells = $(dom).find(".nb-cell");
+        if ( cells.length > 0 ) {
+          cells.each(function() {
+            nb.notebook('insert', {
+              where: "below",
+              restore: $(this)
+            });
+          });
+	        return this;
+	      } else {
+          modal.alert("Not a SWISH notebook");
+        }
       } else {
-	modal.alert("Clipboard is empty");
+	      modal.alert("Clipboard is empty");
       }
     },
 
@@ -558,33 +589,49 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
      * @param {jQuery} cell is the cell that must be activated
      * @param {Boolean} [focus] if `true`, give the cell the focus
      */
-    active: function(cell, focus) {
-      if ( cell ) {
-	var current = this.find(".nb-content .nb-cell.active");
+    active: function(cells, focus) {
+      if ( cells ) {
+	      var current = this.find(".nb-content .nb-cell.active");
 
-	function removeNotForQuery(elem) {
-	  elem.find(".nb-content .nb-cell.not-for-query")
-	      .removeClass("not-for-query");
-	}
+        function removeNotForQuery(elem) {
+          elem.find(".nb-content .nb-cell.not-for-query")
+              .removeClass("not-for-query");
+        }
 
-	if ( cell.length == 1 )
-	{ if ( !(current.length == 1 && cell[0] == current[0]) ) {
-	    removeNotForQuery(this);
-	    current.nbCell('active', false);
-	    cell.nbCell('active', true);
-	    if ( focus ) {
-	      var editors = cell.find(".prolog-editor");
+        if (cells.length > 1) {
+          // Ctrl 키가 눌린 상태에서 여러 셀을 선택한 경우
+          removeNotForQuery(this);
+          cells.each(function() {
+              var cell = $(this);
+              if (!cell.hasClass('active')) {
+                  cell.nbCell('active', true);
+                  if (focus) {
+                      var editors = cell.find(".prolog-editor");
+                      if (editors.length > 0)
+                          editors.prologEditor('focus');
+                      else
+                          cell.focus();
+                  }
+              }
+          });
+        } else if (cells.length == 1) {
+          if (!(current.length == 1 && cells[0] == current[0])) {
+              removeNotForQuery(this);
+              current.nbCell('active', false);
+              cells.nbCell('active', true);
+              if (focus) {
+                  var editors = cells.find(".prolog-editor");
 
-	      if ( editors.length > 0 )
-		editors.prologEditor('focus');
-	      else
-		cell.focus();
-	    }
-	  }
-	} else
-	{ removeNotForQuery(this);
-	  current.nbCell('active', false);
-	}
+                  if (editors.length > 0)
+                      editors.prologEditor('focus');
+                  else
+                  cells.focus();
+              }
+          }
+      } else{ 
+          removeNotForQuery(this);
+          current.nbCell('active', false);
+        }
       }
     },
 
@@ -599,55 +646,57 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
      * the insertion point is visible.
      */
     insert: function(options) {
-      options   = options||{};
-      var relto = currentCell(this);
-      var cell  = options.cell || $.el.div({class:"nb-cell"});
-      var view  = this.find(".nb-view")
+      options = options || {}; 
+      var relto = currentCell(this); 
+      var cell = options.cell || $.el.div({class: "nb-cell"}); 
+      var view = this.find(".nb-view"); 
       var viewrect;
 
-      if ( options.if_visible ) {
-	if ( view.find(".nb-content > div.nb-cell").length > 0 )
-	  viewrect = view[0].getBoundingClientRect();
+      if (options.if_visible) {
+          if (view.find(".nb-content > div.nb-cell").length > 0) {
+              viewrect = view[0].getBoundingClientRect(); 
+          }
       }
 
-      if ( relto ) {
-	if ( options.where == 'above' ) {
-	  if ( viewrect ) {
-	    var seltop = relto[0].getBoundingClientRect().top;
-	    if ( seltop < viewrect.top )
-	      return false;
-	  }
-	  $(cell).insertBefore(relto);
-	} else {
-	  if ( viewrect ) {
-	    var selbottom = relto[0].getBoundingClientRect().bottom;
+      if (relto) {
+          if (options.where == 'above') { 
+              if (viewrect) {
+                  var seltop = relto[0].getBoundingClientRect().top;
+                  if (seltop < viewrect.top) 
+                      return false;
+              }
+              $(cell).insertBefore(relto.first()); 
+          } else { 
+              if (viewrect) {
+                  var selbottom = relto[0].getBoundingClientRect().bottom;
 
-	    if ( selbottom > viewrect.bottom - 20 )
-	      return false;
-	  }
-	  $(cell).insertAfter(relto);
-	}
-      } else {
-	var content = this.find(".nb-content");
+                  if (selbottom > viewrect.bottom - 20) 
+                      return false;
+              }
+              $(cell).insertAfter(relto.last()); 
+          }
+      } else { 
+          var content = this.find(".nb-content"); 
 
-	if ( viewrect ) {
-	  var cbottom = content[0].getBoundingClientRect().bottom;
+          if (viewrect) {
+              var cbottom = content[0].getBoundingClientRect().bottom;
 
-	  if ( cbottom > viewrect.bottom - 20 )
-	    return false;
-	}
-	content.append(cell);
+              if (cbottom > viewrect.bottom - 20) 
+                  return false;
+          }
+          content.append(cell); 
       }
 
-      if ( !options.cell ) {
-	$(cell).nbCell(options.restore);
+      if (!options.cell) {
+          $(cell).nbCell(options.restore);
       }
+      
       $(cell).nbCell('assignName');
       this.notebook('updatePlaceHolder');
       this.notebook('active', $(cell));
       this.notebook('checkModified');
 
-      return this;
+      return this; 
     },
 
     /**
@@ -814,8 +863,8 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
     changeGen: function() {
       var list = this[pluginName]('getClasses');
       this.find(".nb-cell").each(function() {
-	var cg = $(this).nbCell('changeGen');
-	list.push(cg);
+	      var cg = $(this).nbCell('changeGen');
+	      list.push(cg);
       });
       return sha1(list.join());
     },
@@ -877,34 +926,29 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
       this.notebook('clear_all');
 
       this.find(".nb-cell.query").each(function() {
-	if ( why == 'all' || $(this).data('run') == why )
-	  queries.push(this);
+	      if ( why == 'all' || $(this).data('run') == why )
+	          queries.push(this);
       });
 
       function cont(pengine) {
-	switch(pengine.state) {
-	  case 'error':
-	  case 'aborted':
-	    return false;
-	}
+        switch(pengine.state) {
+          case 'error':
+          case 'aborted':
+            return false;
+        }
 
-	return true;
+	      return true;
       }
 
       if ( queries.length > 0 ) {
-	queries.current = 0;
-	var complete = function(pengine) {
-	  if ( cont(pengine) &&
-	       ++queries.current < queries.length ) {
-	    $(queries[queries.current]).nbCell('run', {
-	      complete: complete
-	    })
-	  }
-	};
+        queries.current = 0;
+        var complete = function(pengine) {
+          if ( cont(pengine) && ++queries.current < queries.length ) {
+                $(queries[queries.current]).nbCell('run', { complete: complete })
+          }
+        };
 
-	$(queries[0]).nbCell('run', {
-	  complete: complete
-	});
+        $(queries[0]).nbCell('run', { complete: complete});
       }
     },
 
@@ -926,8 +970,8 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
   function currentCell(nb) {
     var active = $(nb).find(".nb-cell.active");
 
-    if ( active.length == 1 )
-      return active.first();
+    if ( active.length >= 1 )
+      return active;
 
     return null;
   }
@@ -1059,36 +1103,36 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
      */
     active: function(val) {
       return this.each(function() {
-	var elem = $(this);
-	var data = elem.data(pluginName);
+        var elem = $(this);
+        var data = elem.data(pluginName);
 
-	if ( val ) {
-	  elem.addClass("active");
-	  switch( data.type ) {
-	    case "program":
-	      elem.find(".editor").prologEditor('makeCurrent');
-	      break;
-	    case "query":
-	      var prevprog = elem.nbCell('prev', ".program");
-	      if ( prevprog )
-		prevprog.find(".editor").prologEditor('makeCurrent');
-	      elem.closest(".notebook")
-		  .find(".nb-cell.program")
-		  .not(elem.nbCell("program_cells"))
-		  .addClass("not-for-query");
-	      break;
-	  }
-	} else if ( elem.length > 0 ) {
-	  elem.removeClass("active");
-	  switch( data.type ) {
-	    case "markdown":
-	    case "html":
-	      if ( elem.hasClass("runnable") ) {
-		elem.nbCell('run');
-	      }
-	      break;
-	  }
-	}
+        if ( val ) {
+          elem.addClass("active");
+          switch( data.type ) {
+            case "program":
+              elem.find(".editor").prologEditor('makeCurrent');
+              break;
+            case "query":
+              var prevprog = elem.nbCell('prev', ".program");
+              if ( prevprog )
+                prevprog.find(".editor").prologEditor('makeCurrent');
+              elem.closest(".notebook")
+                .find(".nb-cell.program")
+                .not(elem.nbCell("program_cells"))
+                .addClass("not-for-query");
+              break;
+          }
+        } else if ( elem.length > 0 ) {
+          elem.removeClass("active");
+          switch( data.type ) {
+            case "markdown":
+            case "html":
+              if ( elem.hasClass("runnable") ) {
+                elem.nbCell('run');
+              }
+              break;
+          }
+        }
       });
     },
 
@@ -1144,23 +1188,23 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
      */
     assignName: function() {
       return this.each(function() {
-	var cell = $(this);
+        var cell = $(this);
 
-	if ( !cell.attr("name") ) {
-	  var data   = cell.data(pluginName);
-	  if ( data.type ) {
-	    var prefix = cellTypes[data.type].prefix;
-	    var nb     = cell.closest(".notebook");
+        if ( !cell.attr("name") ) {
+          var data   = cell.data(pluginName);
+          if ( data.type ) {
+            var prefix = cellTypes[data.type].prefix;
+            var nb     = cell.closest(".notebook");
 
-	    for(i=1; ; i++) {
-	      var name = prefix+i;
-	      if ( nb.find("*[name="+name+"]").length == 0 ) {
-		cell.attr("name", name);
-		break;
-	      }
-	    }
-	  }
-	}
+            for(i=1; ; i++) {
+              var name = prefix+i;
+              if ( nb.find("*[name="+name+"]").length == 0 ) {
+                cell.attr("name", name);
+                break;
+              }
+            }
+          }
+        }
       });
     },
 
@@ -1371,9 +1415,9 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
       var type = this.data(pluginName).type;
 
       if ( type )
-	return methods.changeGen[type].call(this);
+	      return methods.changeGen[type].call(this);
       else
-	return 0;
+	      return 0;
     },
 
     text: function() {
@@ -1469,16 +1513,18 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
 
     function setData(name) {
       if ( options[name] != undefined ) {
-	cell.data(name, ""+options[name]);
-	delete options[name];
+          cell.data(name, ""+options[name]);
+          delete options[name];
       }
     }
+
     function setAttr(name) {
       if ( options[name] != undefined ) {
-	cell.attr(name, ""+options[name]);
-	delete options[name];
+        cell.attr(name, ""+options[name]);
+        delete options[name];
       }
     }
+
     setData("tabled");
     setData("chunk");
     setData("run");
@@ -1486,37 +1532,39 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
 
     options = $.extend({}, options,
       { role: "query",
-	sourceID: function() {
-	  return cell.nbCell('programs').prologEditor('getSourceID');
-	},
-	prologQuery: function(q) {
-	  cell.nbCell('run');
-	}
-      });
+        sourceID: function() {
+          return cell.nbCell('programs').prologEditor('getSourceID');
+        },
+        prologQuery: function(q) {
+          cell.nbCell('run');
+        }
+      }
+    );
 
     var buttons = $.el.div(
-      {class:"btn-group nb-cell-buttons", role:"group"},
-      glyphButton("wrench", "settings", "Settings",
-		  "default", "xs"),
-      glyphButton("play", "run",       "Run query",
-		  "primary", "xs"));
+      { 
+        class:"btn-group nb-cell-buttons", role:"group"},
+        glyphButton("wrench", "settings", "Settings", "default", "xs"),
+        glyphButton("play", "run", "Run query", "primary", "xs")
+    );
 
     function wrapSolution(a)
-    { this.find(".editor.query").prologEditor('wrapSolution', $(a).text());
+    { 
+      this.find(".editor.query").prologEditor('wrapSolution', $(a).text());
     }
 
     var menu = form.widgets.dropdownButton(
       $.el.span({class:"glyphicon glyphicon-menu-hamburger"}),
       { client: cell,
-	divClass: "nb-query-menu",
-        actions: {
-	  "Aggregate (count all)": wrapSolution,
-	  "--":			   null,
-	  "Projection":		   wrapSolution,
-	  "Order by":              wrapSolution,
-	  "Distinct":              wrapSolution,
-	  "Limit":		   wrapSolution
-        }
+	      divClass: "nb-query-menu",
+          actions: {
+	          "Aggregate (count all)": wrapSolution,
+	          "--":			   null,
+            "Projection":		   wrapSolution,
+            "Order by":              wrapSolution,
+            "Distinct":              wrapSolution,
+            "Limit":		   wrapSolution
+          }
       });
 
     this.append(buttons,
@@ -1548,9 +1596,20 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
       cell.off("click", links.followLink);
     }
 
+    function updateMarkdownWithResults(text) {
+      return text.replace(/(\bq\d+\b)@(\w+)/g, function(match, queryID, variable) {
+        // Observer 등록
+        $.queryObserver('registerObserver', queryID, variable, function(value) {
+            cell.html(cell.html().replace(match, value));
+        });
+
+        var result = $.queryObserver('getResult', queryID, variable);
+        return result !== null ? result : match;
+    });
+  }
 
     function setHTML(data) {
-
+      data = updateMarkdownWithResults(data);
       cell.html(data);
       cell.removeClass("runnable");
       cell.data('markdownText', markdownText);
@@ -1560,19 +1619,19 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
       // call post rendering hooks
       var nbdata = cell.closest(".notebook").data('notebook');
       if ( nbdata && nbdata.markdown_post_renderer ) {
-	for(var i=0; i<nbdata.markdown_post_renderer.length; i++) {
-	  nbdata.markdown_post_renderer[i].call(cell);
-	}
+	      for(var i=0; i<nbdata.markdown_post_renderer.length; i++) {
+	        nbdata.markdown_post_renderer[i].call(cell);
+	      }     
       }
     }
 
     if ( markdownText.trim() != "" )
     { backend.ajax(
       { type: "POST",
-	url: config.http.locations.markdown,
-	data: markdownText,
-	contentType: "text/plain; charset=UTF-8",
-	success: setHTML
+	      url: config.http.locations.markdown,
+        data: markdownText,
+        contentType: "text/plain; charset=UTF-8",
+        success: setHTML
       });
     } else
     { setHTML("<div class='nb-empty-markdown'>"+
@@ -1670,43 +1729,48 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
    *		     `prologRunner._init()`.
    */
   methods.run.query = function(options) {	/* query */
-    var programs = this.nbCell('programs');
-    var settings = this.nbCell('getSettings');
-    var text     = cellText(this);
+      var programs = this.nbCell('programs');
+      var settings = this.nbCell('getSettings');
+      var text     = cellText(this);
 
-    options = options||{};
-    if ( options.bindings ) {
-      var pretext = "";
-      if ( typeof(options.bindings) === 'string' ) {
-	pretext = options.bindings;
-      } else {
-	for(var k in options.bindings) {
-	  if ( options.bindings.hasOwnProperty(k) ) {
-	    if ( pretext )
-	      pretext += ", ";
-	    pretext += k + " = " + Pengine.stringify(options.bindings[k]);
-	  }
-	}
+      var queryID = this.attr("name");  // Get the Query ID -> 에러 발생
+
+      options = options||{};
+      if ( options.bindings ) {
+        var pretext = "";
+        if ( typeof(options.bindings) === 'string' ) {
+            pretext = options.bindings;
+        } else {
+            for(var k in options.bindings) {
+              if ( options.bindings.hasOwnProperty(k) ) {
+                if ( pretext )
+                  pretext += ", ";
+                pretext += k + " = " + Pengine.stringify(options.bindings[k]);
+              }
+            }
+        }
+        if ( pretext )
+          text = pretext + ", (" + prolog.trimFullStop(text) + ")";
       }
-      if ( pretext )
-	text = pretext + ", (" + prolog.trimFullStop(text) + ")";
-    }
-    var query = { source:       programs.prologEditor('getSource',
-						      "source", true),
-                  query:        text,
-		  tabled:       settings.tabled||false,
-		  chunk:        settings.chunk,
-		  title:        false,
-		  query_editor: this.find(".prolog-editor.query")
-                };
-    if ( programs[0]  )     query.editor   = programs[0];
-    if ( options.success  ) query.success  = options.success;
-    if ( options.complete ) query.complete = options.complete;
 
-    var runner = $.el.div({class: "prolog-runner"});
-    this.find(".prolog-runner").prologRunner('close');
-    this.append(runner);
-    $(runner).prologRunner(query);
+      var query = { 
+        source:       programs.prologEditor('getSource', "source", true),
+        query:        text,
+        tabled:       settings.tabled||false,
+        chunk:        settings.chunk,
+        title:        false,
+        query_editor: this.find(".prolog-editor.query"),
+        // id: queryID,  // Include the Query ID in the query options, -> error 발생
+      };
+      
+      if ( programs[0]  )     query.editor   = programs[0];
+      if (options.success) query.success = options.success;
+      if (options.complete) query.complete = options.complete;
+
+      var runner = $.el.div({class: "prolog-runner"});
+      this.find(".prolog-runner").prologRunner('close');
+      this.append(runner);
+      $(runner).prologRunner(query);
   };
 
 		 /*******************************
@@ -2120,6 +2184,25 @@ function cell_type_select_div() {
 
   return $(div);
 }
+
+function updateToolbarButtons(isMultipleSelection) {
+  var tool = $('.nb-toolbar'); 
+
+  var buttonsToDisable = [
+      '.action-up',  
+      '.action-down',         
+      '.action-insertBelow'
+  ];
+
+  buttonsToDisable.forEach(function(selector) {
+      if (isMultipleSelection) {
+        tool.find(selector).addClass('disabled');
+      } else {
+        tool.find(selector).removeClass('disabled');
+      }
+  });
+}
+
 
 
 		 /*******************************
