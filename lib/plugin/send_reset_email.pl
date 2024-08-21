@@ -123,6 +123,7 @@ reset_password_handler(Request) :-
     ->  reply_html_page(
             title('Reset Password'),
             [
+                center([
                 form([action('/save_new_password'), method('POST')], [
                     input([type=hidden, name=id, value=UserID]),
                     input([type=hidden, name=token, value=Token]),  % 토큰도 전달
@@ -131,6 +132,7 @@ reset_password_handler(Request) :-
                     p([label([for=confirm_password], 'Confirm Password: '),
                        input([type=password, name=confirm_password, id=confirm_password])]),
                     p(input([type=submit, value='Save Password']))
+                ])
                 ])
             ]
         ),
@@ -188,9 +190,9 @@ update_user_password(ID, NewPassword) :-
 :- setting(host, atom, 'smtp.gmail.com', 'Name of the SMTP host for relaying the mail').
 :- setting(port, integer, 465, 'Port on which the SMTP host listens (0: default)').
 :- setting(security, oneof([none, ssl, tls, starttls]), ssl, 'Security system to use').
-:- setting(from, atom, 'seoultech.selab@gmail.com', 'Default from-address').
-:- setting(user, atom, 'seoultech.selab@gmail.com', 'Default user to authenticate').
-:- setting(password, atom, 'selab!@331', 'Default password for smtp:user').
+:- setting(from, atom, 'kimdk9829@gmail.cok', 'Default from-address').
+:- setting(user, atom, 'kimdk9829@gmail.com', 'Default user to authenticate').
+:- setting(password, atom, 'ubxv zqei qgpw greq', 'Default password for smtp:user').
 :- setting(auth_method, oneof([plain,login,default]), default, 'Default authorization to use').
 :- setting(hostname, atom, 'selogic.seoultech.ac.kr', 'Default hostname').
 
