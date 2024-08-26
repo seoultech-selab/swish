@@ -50,10 +50,10 @@ define([ "jquery", "config", "tabbed", "form",
 	 "preferences", "modal", "prolog", "links", "utils",
 	 "cm/lib/codemirror", "backend",
 	 "editor", "laconic", "runner", "storage", "sha1",
-	 "printThis"
+	 "printThis", "queryObserver"
        ],
        function($, config, tabbed, form, preferences, modal, prolog, links,
-		utils, CodeMirror, backend) {
+		utils, CodeMirror, backend, queryObserver) {
 
 var cellTypes = {
   "program":  { label:"Program",  prefix:"p"   },
@@ -146,6 +146,8 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
 	  ev.preventDefault();
 	  return false;
 	});
+
+  $(content).queryObserver(); // queryObserver Plugin 연결 
 
 	$(content).on("click", ".nb-cell-buttons a.btn", function(ev) {
 	  var a    = $(ev.target).closest("a");
@@ -1095,6 +1097,7 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
 						   "local file "),
 					fileInsertInput()[0])));
 	}
+      
       });
     },
 
@@ -1584,7 +1587,6 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
 
   methods.run.markdown = function(markdownText) {	/* markdown */
     var cell = this;
-
     markdownText = markdownText||cellText(this);
 
     function makeEditable(ev) {
@@ -1596,20 +1598,54 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
       cell.off("click", links.followLink);
     }
 
-    function updateMarkdownWithResults(text) {
-      return text.replace(/(\bq\d+\b)@(\w+)/g, function(match, queryID, variable) {
-        // Observer 등록
-        $.queryObserver('registerObserver', queryID, variable, function(value) {
-            cell.html(cell.html().replace(match, value));
-        });
+    function extractFromSpan(html) {
+      return html.replace(/<span[^>]*class="pl-atom"[^>]*>(.*?)<\/span>/g, function(match, content) {
+          return content.trim() !== "" ? content : "Not Found";
+      });
+    }
 
-        var result = $.queryObserver('getResult', queryID, variable);
-        return result !== null ? result : match;
-    });
-  }
+    function convertQueryVariablesToSpans(html) {
+        // 정규식을 사용하여 {query_name@variable_name} 패턴을 탐지
+        return html.replace(/{([^}]+)@([^}]+)}/g, function(match, queryName, variableName) {
+            // 변환된 <span> 태그를 반환
+            return `<span data-query="${queryName}" data-variable="${variableName}"> Not Found </span>`;
+        });
+    }
+
+    function registerObservers() {
+      var notebookContent = cell.closest('.nb-content');
+      var spans = cell.find('span[data-query][data-variable]');
+
+      spans.each(function() { // 등록된 패턴을 모두 찾기 
+          var span = $(this);
+          var queryName = span.data('query');
+          var variableName = span.data('variable');
+
+          var check = notebookContent.queryObserver('getObserver', queryName, variableName);
+          var data = notebookContent.data('queryObserver');
+
+          if (check) { // 존재하면
+              data.observers.forEach(function(observer) {
+                if (observer.name === queryName) {
+                    observer.variables.forEach(function(v) {
+                        if (v.variable === variableName) {
+                            v.callback(v.value); // 콜백 함수 호출
+                        }
+                    });
+                }
+              });
+          } else {
+              notebookContent.queryObserver('registerObserver', queryName, variableName, function(value) {
+                  // 모든 관련된 HTML 요소를 찾아 값을 업데이트한다
+                  notebookContent.find(`span[data-query="${queryName}"][data-variable="${variableName}"]`).each(function() {
+                      $(this).text(extractFromSpan(value)); // 요소의 텍스트를 업데이트
+                  });
+              });
+          }
+      });
+    }
 
     function setHTML(data) {
-      data = updateMarkdownWithResults(data);
       cell.html(data);
       cell.removeClass("runnable");
       cell.data('markdownText', markdownText);
@@ -1618,20 +1654,25 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
 
       // call post rendering hooks
       var nbdata = cell.closest(".notebook").data('notebook');
-      if ( nbdata && nbdata.markdown_post_renderer ) {
-	      for(var i=0; i<nbdata.markdown_post_renderer.length; i++) {
-	        nbdata.markdown_post_renderer[i].call(cell);
-	      }     
+      if (nbdata && nbdata.markdown_post_renderer) {
+          for (var i = 0; i < nbdata.markdown_post_renderer.length; i++) {
+              nbdata.markdown_post_renderer[i].call(cell);
+          }
       }
+      registerObservers();
     }
 
     if ( markdownText.trim() != "" )
-    { backend.ajax(
+    {
+      backend.ajax(
       { type: "POST",
 	      url: config.http.locations.markdown,
         data: markdownText,
         contentType: "text/plain; charset=UTF-8",
-        success: setHTML
+        success: function(data) {
+          data = convertQueryVariablesToSpans(data); // 변환된 HTML을 설정하기 전에 변환 적용
+          setHTML(data);
+      }
       });
     } else
     { setHTML("<div class='nb-empty-markdown'>"+
@@ -1733,8 +1774,6 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
       var settings = this.nbCell('getSettings');
       var text     = cellText(this);
 
-      var queryID = this.attr("name");  // Get the Query ID -> 에러 발생
-
       options = options||{};
       if ( options.bindings ) {
         var pretext = "";
@@ -1760,7 +1799,7 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
         chunk:        settings.chunk,
         title:        false,
         query_editor: this.find(".prolog-editor.query"),
-        // id: queryID,  // Include the Query ID in the query options, -> error 발생
+        queryName : settings.name || this.attr("name") // 쿼리 이름
       };
       
       if ( programs[0]  )     query.editor   = programs[0];
@@ -1799,7 +1838,7 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
     function copyAttr(name) {
       var value;
       if ( (value=cell.attr(name)) && value ) {
-	$(dom).attr(name, value);
+	      $(dom).attr(name, value);
       }
     }
 
