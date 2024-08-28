@@ -125,7 +125,6 @@ require(["jquery", "config", "jswish", "plugin", "mypage"],
   }
 );
 
-  
 function hideButtons() {
   $.ajax({
     url: '/user_info',
