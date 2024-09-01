@@ -1,16 +1,30 @@
 [
   {
     "admin":true,
-    "email":"kimdk9829@gmail.com",
-    "id":"kimdk9829",
-    "password": [99, 115, 76, 120, 51, 53, 65, 120, 74, 102, 110, 73, 77 ],
-    "username":""
-  },
-  {
-    "admin":true,
     "email":"test@gmail.com",
     "id":"test",
     "password": [102, 82, 50, 118, 55, 112, 84, 99, 108, 85, 73, 97, 111 ],
     "username":""
+  },
+  {
+    "admin":true,
+    "email":"kimdk9829@gmail.com",
+    "id":"kimdk9829",
+    "password": [106, 83, 76, 89, 47, 107, 86, 66, 99, 110, 87, 82, 103 ],
+    "username":""
+  },
+  {
+    "admin":false,
+    "email":"abcd@gmail.com",
+    "id":"abcd",
+    "password": [76, 79, 80, 75, 55, 112, 109, 47, 69, 109, 55, 120, 46 ],
+    "username":"abcd"
+  },
+  {
+    "admin":true,
+    "email":"gurum8021@naver.com",
+    "id":"uijeong",
+    "password": [80, 118, 85, 121, 111, 47, 51, 84, 46, 90, 103, 51, 99 ],
+    "username":"uijeong"
   }
 ]

@@ -149,7 +149,7 @@ set_session_and_redirect_handler(Request) :-
     http_session_retractall(user(_)),  % 기존 세션 값 제거
     http_session_assert(user(UserID)), % 새 세션 값 설정
     % 지정된 주소로 리다이렉트
-    http_redirect(moved, 'http://selogic.seoultech.ac.kr:3052/mypage', Request).
+    http_redirect(moved, 'http://selogic.seoultech.ac.kr:3050/mypage', Request).
 
     
 % POST 요청 처리 (관리자 액션 처리)

@@ -78,7 +78,7 @@ email_exists(Email, UserID) :-
 send_reset_email(Email, UserID) :-
     generate_token(Token),
     save_reset_token(UserID, Token),
-    format(string(Link), 'http://selogic.seoultech.ac.kr:3052/reset_password?token=~w', [Token]),
+    format(string(Link), 'http://selogic.seoultech.ac.kr:3050/reset_password?token=~w', [Token]),
     smtp_options(Options),
     smtp_send_mail(Email,
                    send_reset_message(Link),

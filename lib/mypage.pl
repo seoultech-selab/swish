@@ -92,7 +92,8 @@ mypage_content -->
                     label([for(new_password)], 'New Password'),
                     input([type(password), class('password-input'), name(new_password)]),
                     label([for(confirm_new_password)], 'Confirm New Password'),
-                    input([type(password), class('password-input'), name(confirm_new_password)])
+                    input([type(password), class('password-input'), name(confirm_new_password)]),
+                    button([id(show_password_button)], 'Show Password') % 비밀번호 보이기 버튼 추가
                 ]),
                 div(class('form-actions'), [
                     button([id(new_password)], 'New Password'), % New Password 버튼
@@ -100,9 +101,15 @@ mypage_content -->
                     button([id(password_cancel_button), style('display:none')], 'Cancel') % 취소 버튼
                 ])
             ]),
-            button([id(delete_button)], 'Delete Account') % 삭제 버튼
+            button([id(delete_button)], 'Delete Account'), % 삭제 버튼
+            \home_button % Home 텍스트가 포함된 링크 추가
         ])
     ]).
+
+home_button -->
+    { http_absolute_location(swish(.), HREF, [])
+    },
+    html(a([href(HREF), class('home-text')], 'Home')).
 
 
 % get User Details

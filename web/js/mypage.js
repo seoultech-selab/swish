@@ -57,21 +57,44 @@ define(["jquery"], function($) {
                     });
 
                     elem.on("click", "#update_button", function(ev) {
+                        const username = $('input[name="username"]').val();
+                        const email = $('input[name="email"]').val();
+
+                        if(!username){
+                            alert("Please enter your username!");
+                            return;
+                        }
+
+                        if(!email){
+                            alert("Please enter your email!");
+                            return;
+                        }
+
                         const profileData = {
                             id: methods.prevValues.id,
-                            username: $('input[name="username"]').val(),
-                            email: $('input[name="email"]').val()
+                            username: username,
+                            email: email
                         };
 
                         methods.updateProfile(profileData);
                     });
 
                     elem.on("click", "#password_update_button", function(ev) {
+                        const current_password = $('input[name="current_password"]').val();
+                        const new_password = $('input[name="new_password"]').val();
+                        const confirm_new_password = $('input[name="confirm_new_password"]').val();
+
+
+                        if(!new_password){
+                            alert("Please enter your new password!");
+                            return;
+                        }
+
                         const passwordData = {
                             id: methods.prevValues.id,
-                            current_password: $('input[name="current_password"]').val(),
-                            new_password: $('input[name="new_password"]').val(),
-                            confirm_new_password: $('input[name="confirm_new_password"]').val()
+                            current_password: current_password,
+                            new_password: new_password,
+                            confirm_new_password: confirm_new_password
                         };
 
                         methods.updatePassword(passwordData);
@@ -79,6 +102,10 @@ define(["jquery"], function($) {
 
                     elem.on("click", "#delete_button", function(ev) {
                         methods.deleteAccount();
+                    });
+
+                    elem.on("click", "#show_password_button", function(ev) {
+                        methods.togglePasswordVisibility();
                     });
                 });
             },
@@ -194,7 +221,24 @@ define(["jquery"], function($) {
                         }
                     });
                 }
-            }
+            },
+
+            /**
+             * Toggle the visibility of the password fields
+             */
+            togglePasswordVisibility: function() {
+                var passwordFields = $('.password-input');
+                passwordFields.each(function() {
+                    var fieldType = $(this).attr('type');
+                    if (fieldType === 'password') {
+                        $(this).attr('type', 'text');
+                        $('#show_password_button').text('Hide Password');
+                    } else {
+                        $(this).attr('type', 'password');
+                        $('#show_password_button').text('Show Password');
+                    }
+                });
+            },
         };
 
         $.fn.mypage = function(method) {

@@ -61,9 +61,8 @@ input[type="text"], input[type="email"], input[type="password"] {
     font-size: 15px;
 }
 
-#mypage .form-actions button {
+#mypage button {
     padding: 10px;
-    background-color: #337AB7;
     color: white;
     border: none;
     border-radius: 4px;
@@ -71,8 +70,16 @@ input[type="text"], input[type="email"], input[type="password"] {
     margin-top: 10px;
 }
 
+#mypage .form-actions button{
+    background-color: #337AB7;
+}
+
 #delete_button{
     background-color: #dc3030;
+}
+
+#show_password_button{
+    background-color: #003580;
 }
 
 #mypage .form-actions button:hover {
