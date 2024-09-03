@@ -52,8 +52,8 @@ delete_file(FileName, UserID, Response) :-
     (   gitty:gitty_file(Dir, FileName, Head) % 파일 이름을 사용하여 최신 커밋 해시 찾기
     ->  gitty:gitty_commit(Dir, Head, Meta), % 해시를 사용하여 메타데이터 가져오기
         (   web_storage:owns(_{user_id: UserID}, Meta, user(me))
-        ->  delete_commit_chain(Dir, FileName), % 파일 커밋 삭제
-            delete_from_head(Dir, FileName), % HEAD 파일에서 파일 이름 삭제
+        ->  delete_from_head(Dir, FileName), % HEAD 파일에서 파일 이름 삭제
+            delete_commit_chain(Dir, FileName), % 파일 커밋 삭제
             Response = _{status: "success", message: "File deleted successfully"}
         ;   Response = _{status: "failure", message: "Permission denied: You do not own this file"}
         )
