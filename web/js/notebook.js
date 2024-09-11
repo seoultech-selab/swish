@@ -85,7 +85,7 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
 	var storage = {};		/* storage info */
 	var data = {};			/* private data */
 	var toolbar, content;
-  // Ctrl 키 상태를 추적하는 변수
+
   var isCtrlPressed = false;
   var selectedCells = [];
 
@@ -147,7 +147,7 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
 	  return false;
 	});
 
-  $(content).queryObserver(); // queryObserver Plugin 연결 
+  $(content).queryObserver(); 
 
 	$(content).on("click", ".nb-cell-buttons a.btn", function(ev) {
 	  var a    = $(ev.target).closest("a");
@@ -601,7 +601,6 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
         }
 
         if (cells.length > 1) {
-          // Ctrl 키가 눌린 상태에서 여러 셀을 선택한 경우
           removeNotForQuery(this);
           cells.each(function() {
               var cell = $(this);
@@ -1303,39 +1302,47 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
 	    offset: 3,
 	    action: function(ev, values) {
 	      if ( values.tabled != current.tabled ) {
-		if ( values.tabled )
-		  elem.data("tabled", "true");
-		else
-		  elem.removeData("tabled");
-	      }
-	      if ( values.run != current.run ) {
-		if ( values.run )
-		  elem.data("run", "onload");
-		else
-		  elem.removeData("run");
-	      }
-	      if ( values.chunk != current.chunk ) {
-		if ( values.chunk != 1 )
-		  elem.data("chunk",  ""+values.chunk);
-		else
-		  elem.removeData("chunk");
-	      }
-	      var name = values.name ? values.name.trim() : "";
-	      if (  name != current.name ) {
-		if ( name )
-		  elem.attr("name", name);
-		else
-		  elem.attr("name", null);
-	      }
-	      elem.closest(".notebook").notebook('checkModified');
-	    }
-	  })));
+            if ( values.tabled )
+              elem.data("tabled", "true");
+            else
+              elem.removeData("tabled");
+        }
+        
+        if ( values.run != current.run ) {
+          if ( values.run )
+            elem.data("run", "onload");
+          else
+            elem.removeData("run");
+        }
+
+        if ( values.chunk != current.chunk ) {
+      if ( values.chunk != 1 )
+        elem.data("chunk",  ""+values.chunk);
+      else
+        elem.removeData("chunk");
+        }
+        var name = values.name ? values.name.trim() : "";
+        if (  name != current.name ) {
+          if (isQueryNameDuplicate(elem, name)) {
+            alert("Query name '" + name + "' is already in use. Please choose a different name.");
+            return;  
+          } else {
+            if (name)
+              elem.attr("name", name);
+            else
+              elem.attr("name", null);
+          }
+        }
+            elem.closest(".notebook").notebook('checkModified');
+          }
+        })));
       }
 
       form.showDialog({ title: "Set options for query",
                         body: querySettingsBody
                       });
     },
+  
 
     /**
      * Change the editor of a program cell to fixed (one line) height
@@ -1587,6 +1594,7 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
 
   methods.run.markdown = function(markdownText) {	/* markdown */
     var cell = this;
+    var notebookContent = cell.closest('.nb-content');
     markdownText = markdownText||cellText(this);
 
     function makeEditable(ev) {
@@ -1599,24 +1607,25 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
     }
 
     function extractFromSpan(html) {
-      return html.replace(/<span[^>]*class="pl-atom"[^>]*>(.*?)<\/span>/g, function(match, content) {
-          return content.trim() !== "" ? content : "Not Found";
-      });
+      if(html == null)
+        return "Not Found";
+      else{
+        return html.replace(/<span[^>]*class="pl-atom"[^>]*>(.*?)<\/span>/g, function(match, content) {
+            return content.trim() !== "" ? content : "Not Found";
+        });
+      }
     }
 
     function convertQueryVariablesToSpans(html) {
-        // 정규식을 사용하여 {query_name@variable_name} 패턴을 탐지
         return html.replace(/{([^}]+)@([^}]+)}/g, function(match, queryName, variableName) {
-            // 변환된 <span> 태그를 반환
             return `<span data-query="${queryName}" data-variable="${variableName}"> Not Found </span>`;
         });
     }
 
     function registerObservers() {
-      var notebookContent = cell.closest('.nb-content');
       var spans = cell.find('span[data-query][data-variable]');
 
-      spans.each(function() { // 등록된 패턴을 모두 찾기 
+      spans.each(function() { 
           var span = $(this);
           var queryName = span.data('query');
           var variableName = span.data('variable');
@@ -1624,21 +1633,21 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
           var check = notebookContent.queryObserver('getObserver', queryName, variableName);
           var data = notebookContent.data('queryObserver');
 
-          if (check) { // 존재하면
+          if (check) { 
               data.observers.forEach(function(observer) {
                 if (observer.name === queryName) {
                     observer.variables.forEach(function(v) {
                         if (v.variable === variableName) {
-                            v.callback(v.value); // 콜백 함수 호출
+                            v.callback(v.value); 
+
                         }
                     });
                 }
               });
           } else {
               notebookContent.queryObserver('registerObserver', queryName, variableName, function(value) {
-                  // 모든 관련된 HTML 요소를 찾아 값을 업데이트한다
                   notebookContent.find(`span[data-query="${queryName}"][data-variable="${variableName}"]`).each(function() {
-                      $(this).text(extractFromSpan(value)); // 요소의 텍스트를 업데이트
+                      $(this).text(extractFromSpan(value)); 
                   });
               });
           }
@@ -1670,7 +1679,7 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
         data: markdownText,
         contentType: "text/plain; charset=UTF-8",
         success: function(data) {
-          data = convertQueryVariablesToSpans(data); // 변환된 HTML을 설정하기 전에 변환 적용
+          data = convertQueryVariablesToSpans(data); 
           setHTML(data);
       }
       });
@@ -1799,7 +1808,7 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
         chunk:        settings.chunk,
         title:        false,
         query_editor: this.find(".prolog-editor.query"),
-        queryName : settings.name || this.attr("name") // 쿼리 이름
+        queryName : settings.name || this.attr("name") 
       };
       
       if ( programs[0]  )     query.editor   = programs[0];
@@ -2085,6 +2094,11 @@ CodeMirror.modes.eval = CodeMirror.modes.prolog;
 		 /*******************************
 		 *	     UTILITIES		*
 		 *******************************/
+  
+  function isQueryNameDuplicate(cell, name){
+    var nb = cell.closest(".notebook");
+    return nb.find("*[name='" + name + "']").length == 1;
+  }
 
   function cellText(cell) {
     return cell.find(".editor").prologEditor('getSource', undefined, true);

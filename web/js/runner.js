@@ -1011,9 +1011,9 @@ define([ "jquery", "config", "preferences", "utils",
      */
     abort: function() {
       return this.each(function() {
-	var elem = $(this);
-	var data = elem.data('prologRunner');
-	data.prolog.abort();
+        var elem = $(this);
+        var data = elem.data('prologRunner');
+        data.prolog.abort();
       });
     },
 
@@ -1023,23 +1023,29 @@ define([ "jquery", "config", "preferences", "utils",
      */
     close: function() {
       if ( this.length ) {
-	var parents = this.parent();
+        var parents = this.parent();
 
-	this.each(function() {
-	  var elem = $(this);
-	  var data = elem.data('prologRunner');
+        this.each(function() {
+          var elem = $(this);
+          var data = elem.data('prologRunner');
 
-	  if ( elem.prologRunner('alive') ) {
-	    $(".prolog-editor").trigger('pengine-died', data.prolog.id);
-	    if ( data.prolog.state != 'detached' ) {
-	      data.prolog.abort();
-	      elem.prologRunner('setState', 'aborted');
-	    }
-	  }
-	});
-	this.remove();
+          if ( elem.prologRunner('alive') ) {
+            $(".prolog-editor").trigger('pengine-died', data.prolog.id);
+            if ( data.prolog.state != 'detached' ) {
+              data.prolog.abort();
+              elem.prologRunner('setState', 'aborted');
+            }
+          }
 
-	parents.trigger('scroll-to-bottom', true);
+          var nbContent = elem.closest('.nb-content');
+          var queryObserver = nbContent.data('queryObserver');
+          if (queryObserver) {
+              nbContent.queryObserver('notifyObservers', data.prolog.id, null, null, true);
+          }
+        });
+        this.remove();
+
+        parents.trigger('scroll-to-bottom', true);
       }
       return this;
     },
