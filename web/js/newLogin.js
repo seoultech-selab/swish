@@ -56,6 +56,14 @@ define(["jquery", "modal"], function($) {
                             window.globalSettings.role = response.role;
                             setMypageButton(true);
                             loginButton.text('Logout');
+                            
+                            // If the user's role is 'admin', add the Admin button to the navbar
+                            if (response.role === 'admin') {
+                                if ($('#admin-navbar-item').length === 0) { // Avoid duplicate button
+                                    const adminNavItem = $('<li id="admin-navbar-item" class="nav-item"><a href="/admin" class="nav-link">Admin</a></li>');
+                                    $('#navbar > ul.nav.navbar-nav.menubar').append(adminNavItem);
+                                }
+                            }
                         
                         } else { // false
                             window.globalSettings.user = null;
