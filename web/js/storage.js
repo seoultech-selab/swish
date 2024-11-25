@@ -110,6 +110,9 @@ define([ "jquery", "config", "modal", "form", "gitty",
 	elem.on("download", function(ev) {
 	  onStorage(ev, 'download');
 	});
+	elem.on("upload", function(ev) {
+		onStorage(ev, 'upload');
+	  });
 	elem.on("fileInfo", function(ev) {
 	  onStorage(ev, 'info');
 	});
@@ -303,6 +306,31 @@ define([ "jquery", "config", "modal", "form", "gitty",
       return this;
     },
 
+	/**
+     * Upload File to Server.
+	 * @param {String} file Name of the file to upload. 
+     */
+    upload: function(file, callback) {
+		var options = this.data(pluginName);
+		var formData = new FormData();
+    	formData.append('file', file);
+
+		$.ajax({
+			url: '/upload',
+			type: 'POST',
+			data: formData,
+			processData: false,
+			contentType: false,
+			success: function(response) {
+				callback(null, response.filename, response.filePath); 
+			},
+			error: function(error) {
+				alert(error.responseJSON.message);
+          		callback(error);
+			}
+		});
+  },
+  
     /**
      * Revert to upstream version
      */

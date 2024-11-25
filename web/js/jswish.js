@@ -187,84 +187,6 @@ preferences.setInform("preserve-state", ".unloadable");
     }
   }; // defaults;
 
-  $(() => {
-    // 파일 입력 요소 추가
-    if ($('#fileInput').length === 0) {
-        $('body').append('<input type="file" id="fileInput" multiple style="display: none;" />');
-    }
-
-    // 파일 입력 요소에 change 이벤트 핸들러 설정
-    $(document).on('change', '#fileInput', function(event) {
-        var files = event.target.files;
-        if (files.length > 0) {
-            // 현재 페이지가 특정 파일 화면인지 확인
-            var isFilePage = window.location.pathname.startsWith('/p/');
-
-            if (isFilePage) {
-                // 파일 내용을 클라이언트 측에서 복사 붙여넣기
-                var fileReader = new FileReader();
-
-                fileReader.onload = function(e) {
-                    var fileContent = e.target.result;
-                    // 에디터 내용 변경
-                    const editor = $('.CodeMirror')[0].CodeMirror;
-                    editor.setValue(fileContent);
-                    
-                };
-
-                fileReader.readAsText(files[0]); // 첫 번째 파일 읽기
-            } else {
-                // 기존 파일 업로드 기능 유지
-                var uploadFile = function(file, callback) {
-                    var formData = new FormData();
-                    formData.append('file', file);
-
-                    $.ajax({
-                        url: '/upload',
-                        type: 'POST',
-                        data: formData,
-                        processData: false,
-                        contentType: false,
-                        success: function(response) {
-                            console.log('File uploaded successfully:', response);
-                            callback(null, response.filename);  // 응답에서 filename을 전달
-                        },
-                        error: function(error) {
-                            console.error('File upload failed:', error);
-                            callback(error);
-                        }
-                    });
-                };
-
-                var lastUploadedFileName = null;
-
-                var uploadNextFile = function(index) {
-                    if (index < files.length) {
-                        uploadFile(files[index], function(err, fileName) {
-                            if (!err) {
-                                lastUploadedFileName = fileName;  // 마지막 업로드된 파일 이름 저장
-                                uploadNextFile(index + 1);
-                            } else {
-                                alert('File upload failed for file: ' + files[index].name);
-                            }
-                        });
-                    } else {
-                        // 모든 파일 업로드가 완료되었을 때 마지막 파일로 리다이렉트
-                        if (lastUploadedFileName) {
-                            window.location.href = '/p/' + lastUploadedFileName;
-                        } else {
-                            // 파일이 하나도 업로드되지 않았을 경우 새로고침
-                            location.reload();
-                        }
-                    }
-                };
-
-                uploadNextFile(0);  // 첫 번째 파일부터 업로드 시작
-            }
-        }
-    });
-  });
-  
   /** @lends $.fn.swish */
   var methods = {
     /**
@@ -355,14 +277,24 @@ preferences.setInform("preserve-state", ".unloadable");
             { "Backends ...": showBackends
             });
         }
+        // upload
+        $(() => {
+          if ($('#fileInput').length === 0) {
+              $('body').append('<input type="file" id="fileInput" multiple style="display: none;" />');
+          }
+      
+          $(document).on('change', '#fileInput', function(event) {
+            var files = event.target.files;
 
-        // URL 경로에서 파일 경로를 추출하여 playURL을 호출하는 부분 추가
-        // var urlPath = window.location.pathname;
-        // if (urlPath.startsWith('/logicfl')) {
-        //   var filePath = window.location.origin + urlPath;
-        //   elem.swish('playURL', { url: filePath });
-        // }
-
+            if (files.length > 0) {
+                // 각 파일을 순차적으로 업로드
+                for (var i = 0; i < files.length; i++) {
+                  elem.swish('uploadFile', files[i]);
+                }
+            }
+          });
+        });
+ 
         setInterval(function(){
           $(".each-minute").trigger("minute");
         }, 60000);
@@ -377,6 +309,7 @@ preferences.setInform("preserve-state", ".unloadable");
         $().version('checkForUpdates');
         elem.trigger("post-config");
       });
+
     },
 
     /**
@@ -448,6 +381,31 @@ preferences.setInform("preserve-state", ".unloadable");
       menuBroadcast(name, data);
       return this;
     },
+
+    uploadFile: function(file){
+      var elem = this;
+
+      var formData = new FormData();
+    	formData.append('file', file);
+  
+      this.find(".storage").storage('upload', file, function(error, filename, filePath){ 
+          if (error) {
+              return this;
+          }
+          else{
+              var options = {
+                file: filename,
+                filePath: filePath, 
+                newTab: true,     
+                //noHistory: true   
+            };
+    
+            elem.swish('playFile', options);
+          }
+      }); 
+
+      return this;
+  },
 
     /**
      * Play a file from the webstore, loading it through ajax
